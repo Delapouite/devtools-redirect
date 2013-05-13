@@ -1,10 +1,9 @@
-
 (function(DevtoolsRedirect) {
 
   /*
     Extension Communication,
   */
-  var port = chrome.extension.connect({name:"panel"});
+  var port = chrome.extension.connect({name: 'panel'});
   port.onMessage.addListener(function(msg) {
     switch(msg.action) {
       case 'validatedUrl':
@@ -18,7 +17,7 @@
   */
   DevtoolsRedirect.Rule = can.Model({
     attributes: {
-      resources: "App.Models.Resource.models",
+      resources: 'App.Models.Resource.models',
       enabled: 'boolean'
     }
   }, {
@@ -26,7 +25,7 @@
     domainURL: null,
     resources: null
   });
-  
+
   DevtoolsRedirect.Resource = can.Model({
     attributes: {
       enabled: 'boolean'
@@ -36,20 +35,20 @@
     resourceURL: null,
     resourceRedirectURL: null
   });
-    
+
   DevtoolsRedirect.Resource.List = can.Model.List({
-   
+
   });
-  
+
   /*
     Panel constructor,
   */
   DevtoolsRedirect.Panel = can.Control({
-    
+
     defaults: {
       rules: null
     },
-    
+
     resourceKeyupTimeouts: null,
     validatingUrls: null
   },
@@ -61,14 +60,14 @@
       this.formRules = $('#form-rules');
       this.formActions = this.formRules.find('.form-actions');
       this.wrpSaving = this.element.find('#wrp-saving');
-      
+
       var optionsDef = null;
       if(!this.options.rules) {
         optionsDef = DevtoolsRedirect.getOptions('rules').then(function(opts) {
-          _this.options.rules = opts['rules'];
+          _this.options.rules = opts.rules;
         });
       }
-      
+
       this.resourceKeyupTimeouts = {};
       this.validatingUrls = {};
 
@@ -76,9 +75,9 @@
       this.formRules.on('change', 'input.siteEnabled', function(event) {
         var fieldset = $(this).parents('fieldset');
         if(!fieldset[0]) return;
-        
+
         fieldset.find('ul input').attr('disabled', $(this).is(':checked') ? false : true);
-        
+
         event.preventDefault();
       });
 
@@ -93,9 +92,9 @@
           _this.setResourcesStates();
         }
       });
-      
+
     },
-    
+
     setResourcesStates: function() {
       var _this = this;
       this.element.find('input.resourceURL, input.resourceRedirectURL').trigger('keyup');
@@ -108,34 +107,34 @@
       //Add a new resource row
       var list = el.parents('fieldset').find('ul.list-resources');
       if(list) this.addResource(list);
-      
+
       event.preventDefault();
     },
-    
+
     "ul li .btn-delete click": function(el, event) {
       //Add a new resource row
       this.deleteResourceRow(el.parent());
-      
+
       event.preventDefault();
     },
-    
+
     "input.resourceURL, input.resourceRedirectURL keyup": function(el, event) {
       var _this = this;
       var url = el.val();
 
       //Make sure the url isn't empty,
-      if(url === "") return;
+      if(url === '') return;
 
       //Make sure it's not a path url,
       var lastChar = url[url.length - 1];
-      if(lastChar == "*") return;
+      if(lastChar === '*') return;
 
       var model = el.parents('li').data('resource');
-      var id = model._cid+"-"+el.data('resourcetype');
+      var id = model._cid + '-' + el.data('resourcetype');
       if(this.resourceKeyupTimeouts[id]) clearTimeout(this.resourceKeyupTimeouts[id]);
 
       //Build the url w/ the domain if needed,
-      if(url.indexOf('http://') == -1 && url.indexOf('https://') == -1 && url.indexOf('file://') == -1) {
+      if(url.indexOf('http://') === -1 && url.indexOf('https://') === -1 && url.indexOf('file://') === -1) {
         var parentFieldset = el.parents('fieldset');
         if(parentFieldset.length) url = _this.formatDomainURL(parentFieldset.find('input.domainURL').val()) + _this.formatResourceURL(url);
       }
@@ -162,10 +161,10 @@
 
     saveRules: function() {
       var _this = this;
-      
+
       //Get rules,
       var rules = this.retrieveRules();
-      
+
       if(!chrome.storage) { return; }
 
       //Show loading state,
@@ -174,9 +173,9 @@
 
       chrome.storage.sync.set({'rules': rules}, function() {
         //_this.wrpSaving.css('display', 'none');
-        
+
         //Once options are set, update options,
-        if(typeof window.respond != 'undefined') window.respond({action: 'refreshOptions'});
+        if(typeof window.respond !== 'undefined') window.respond({action: 'refreshOptions'});
       });
     },
 
@@ -188,24 +187,24 @@
       icon.tooltip('destroy');
 
       if(icon) {
-        if(status == 'ok') {
+        if(status === 'ok') {
           icon.attr('class', 'icon icon-ok-sign');
           icon.parent().removeClass('error');
           if(content) {
             icon.popover({
               placement: 'bottom',
               title: 'File Preview',
-              content: '<div style="word-wrap: break-word; font-size:9pt; line-height:1.25em;">'+content+'</div>',
+              content: '<div style="word-wrap: break-word; font-size:9pt; line-height:1.25em;">' + content + '</div>',
               html: true
             });
           }
         }
-        else if(status == 'error') {
+        else if(status === 'error') {
           icon.attr('class', 'icon icon-remove-sign');
           icon.parent().addClass('error');
-          icon.tooltip({placement: 'bottom', title:'Error: can\'t load "'+url+'"'})
+          icon.tooltip({placement: 'bottom', title:'Error: can\'t load "' + url + '"'})
         }
-        else if(status == 'loading') {
+        else if(status === 'loading') {
           icon.attr('class', 'icon icon-question-sign');
           icon.parent().removeClass('error');
         }
@@ -220,11 +219,10 @@
 
     validatedResourceUrl: function(id, url, status, content) {
       if(this.validatingUrls[id]) {
-        if(status == 200) {
-          if(content) var popoverContent = content.length > 200 ? content.substr(0, 200)+" [...]" : content;
+        if(status === 200) {
+          if(content) var popoverContent = content.length > 200 ? content.substr(0, 200) + ' [...]' : content;
           this.setInputIcon(this.validatingUrls[id].input, 'ok', url, popoverContent ? popoverContent : null);
-        }
-        else {
+        } else {
           this.setInputIcon(this.validatingUrls[id].input, 'error', url);
         }
 
@@ -234,18 +232,18 @@
 
     addResource: function(list, resource) {
       list = list ? list : this.element.find('.list-resources').eq(0);
-      
+
       var newResourceList = DevtoolsRedirect.Resource.models([
         {resourceURL: resource ? resource.resourceURL : null, resourceRedirectURL: resource ? resource.resourceRedirectURL : null}
       ]);
-      
+
       var resourceHTML = can.view('views/rule-resources.ejs', {resources: newResourceList});
       list.append(resourceHTML);
 
       //Save current state,
       this.saveRules();
     },
-    
+
     addRulesSet: function() {
       var newRules = DevtoolsRedirect.Resource.models([new DevtoolsRedirect.Rule()]);
       var ruleHTML = can.view('views/rules.ejs', {rules: newRules});
@@ -254,95 +252,94 @@
       //Save current state,
       this.saveRules();
     },
-    
+
     addResourceFromTools: function(tab, resource) {
-      
+
       //Get domain,
       var domain = this.getDomain(tab.url, true);
-      
+
       //Try to match it in the list,
       var list = this.findDomainList(domain);
-      
+
       // Retrieve the file path,
-      var resourceURL = resource.url.replace(/^[^\/]*(?:\/[^\/]*){2}/, "");
-      
+      var resourceURL = resource.url.replace(/^[^\/]*(?:\/[^\/]*){2}/, '');
+
       //Add the resource,
       this.addResource(list, {resourceURL: resourceURL});
-      
+
     },
-    
+
     deleteResourceRow: function(rowEl) {
       rowEl.remove();
 
       //Save current state,
       this.saveRules();
     },
-    
+
     retrieveRules: function() {
       var _this = this;
       var rules = [];
-      
+
       this.element.find('fieldset').each(function() {
         var el = $(this);
         //Retrieve domain data,
         var domain = {};
         domain.enabled = el.find('input.siteEnabled').is(':checked') ? true : false;
         domain.domainURL = _this.formatDomainURL(el.find('input.domainURL').val());
-        
+
         //Auto-disable is domainURL is empty,
-        if(domain.domainURL == "") domain.enabled = false;
+        if(domain.domainURL === '') domain.enabled = false;
 
         //Retrieve rules data,
         domain.resources = [];
         el.find('ul.list-resources li').each(function() {
           var el = $(this);
-          
           var resource = {};
           resource.enabled = el.find('input.resourceEnabled').is(':checked') ? true : false;
           resource.resourceURL = _this.formatResourceURL(el.find('input.resourceURL').val());
           resource.resourceRedirectURL = el.find('input.resourceRedirectURL').val();
-          
+
           //Auto-disable is domainURL is empty,
-          if(resource.resourceURL == "" || resource.resourceRedirectURL == "") resource.enabled = false;
+          if(resource.resourceURL === '' || resource.resourceRedirectURL === '') resource.enabled = false;
 
           domain.resources.push(resource);
-          
+
         });
-        
+
         rules.push(domain);
       });
-      
+
       return rules;
     },
-    
+
     findDomainList: function(domain) {
       var list = null;
-      
+
       //Crawl current domains,
       this.element.find('fieldset legend').each(function() {
         var txtDomain = $(this).find('input.domainURL');
-        if(txtDomain.val() == domain) list = $(this).next('ul.list-resources');
+        if(txtDomain.val() === domain) list = $(this).next('ul.list-resources');
       });
-      
+
       return list;
     },
-    
+
     getDomain: function(url, asRegex) {
       var matches = url.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/i);
       var domain  = matches && matches[1] ? matches[1] : null;
-      return domain && asRegex ? "*://"+domain : domain;
+      return domain && asRegex ? '*://' + domain : domain;
     },
 
     formatDomainURL: function(u) {
-      return u != "" ? u.replace(/\/?$/, '/') : u; //Make sure the domainURL has a trailing slash
+      return u !== '' ? u.replace(/\/?$/, '/') : u; //Make sure the domainURL has a trailing slash
     },
 
     formatResourceURL: function(u) {
-      return u != "" ? u.replace(/^\//g, '') : u; //Remove the leading slash if it exist
+      return u !== '' ? u.replace(/^\//g, '') : u; //Remove the leading slash if it exist
     }
-    
+
   });
-  
+
   window.Panel = new DevtoolsRedirect.Panel('#form-rules', {});
 
 })(DevtoolsRedirect);
