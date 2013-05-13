@@ -175,13 +175,12 @@
   refreshOptions();
 
   var isResourcePath = function(r) {
-    var l = r[r.length];
-    return l === '*' ? true : false;
+    return r[r.length] === '*';
   };
 
   var getFileName = function(u) {
     var a = document.createElement('a');
-    a.href= u;
+    a.href = u;
     return a.pathname.split('/').pop(); // filename.php
   };
 
