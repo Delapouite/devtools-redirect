@@ -7,14 +7,14 @@
       "32": "icon_32.png",
       "128": "icon_128.png"
     },
-    
+
     "browser_action": {
       "default_popup": "popup.html",
       "default_icon": "images/browser-icon-inactive.png"
     },
-    
+
     "background": {"page": "background.html"},
-    
+
     "devtools_page": "devtools.html",
 
     "permissions": [
@@ -24,5 +24,5 @@
       "webRequest",
       "webRequestBlocking",
       "<all_urls>"
-    ]   
+    ]
 }

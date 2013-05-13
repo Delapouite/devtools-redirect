@@ -1,20 +1,14 @@
-
 (function() {
-  
-  var redirectRoot = "http://localhost/trsrc-MAINLINE/site/";
   var listeners = [];
   var resourcesRedirected = {};
-  
   var opts = {};
   var refreshOptions = function() {
     //Make sure we remove the old listeners to avoid redirect conflicts,
-    if(listeners.length) {
-      for(index in listeners) {
-        chrome.webRequest.onBeforeRequest.removeListener(listeners[index]);
-      }
-      //Reset the listeners,
-      listeners.length = 0;
-    }
+    listeners.forEach(function(listener) {
+      chrome.webRequest.onBeforeRequest.removeListener(listener);
+    });
+
+    listeners.length = 0;
 
     DevtoolsRedirect.getOptions(['rules']).then(function(storeOptions) {
       opts = storeOptions;
@@ -24,55 +18,52 @@
 
   var setBrowserIcon = function(state, tabId) {
     var imgSrc = 'images/browser-icon-inactive.png';
-    if(state == 'active') {
+    if(state === 'active') {
       imgSrc = 'images/browser-icon-active.png';
     }
-    
+
     chrome.browserAction.setIcon({
       path: imgSrc,
       tabId: tabId
     });
   };
-  
-  
+
   // Our hash
   var currentTabId = -1;
   // Set the ID of the current active tab
   chrome.tabs.onActivated.addListener(function(activeInfo) {
     currentTabId = activeInfo.tabId;
   });
-  
+
   var badgeCounts = {};
   var resetBadgeCount = function(tabId) {
     badgeCounts[tabId] = 0;
   };
-  
+
   var renderBadgeCount = function(tabId) {
     if(badgeCounts[tabId] > 0) {
       setBrowserIcon('active', tabId);
       chrome.browserAction.setBadgeText({text: badgeCounts[tabId].toString(), tabId: tabId});
-    }
-    else {
+    } else {
       setBrowserIcon('inactive', tabId);
       chrome.browserAction.setBadgeText({text: '', tabId: tabId});
     }
   };
-  
-  
+
   //Communication,
   var ports = {};
   chrome.extension.onConnect.addListener(function(port) {
-      if(port.name != 'devtools' && port.name != 'popup' && port.name != 'panel') return;
+      if(port.name !== 'devtools' && port.name !== 'popup' && port.name !== 'panel') return;
       var tabId = port.sender && port.sender.tab.id ? port.sender.tab.id : null;
       ports[port.portId_] = {port: port, portId: port.portId_, tabId: tabId, name: port.name};
-      
+
       // Remove port when destroyed (eg when devtools instance is closed)
       port.onDisconnect.addListener(function(port) {
         var portObj = ports[port.portId_];
-        if(portObj && port.name == 'devtools' && portObj.tabId) disableTab(portObj.tabId);
+        if(portObj && port.name === 'devtools' && portObj.tabId) disableTab(portObj.tabId);
         delete ports[port.portId_];
       });
-      
+
       port.onMessage.addListener(function(msg) {
         // Whatever you wish
         if(msg && msg.action) {
@@ -96,25 +87,25 @@
         }
       });
   });
-  
+
   // Function to send a message to all devtool.html views:
   function notifyDevtools(msg) {
     Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name == 'devtools') ports[portId_].port.postMessage(msg);
+      if(ports[portId_].name === 'devtools') ports[portId_].port.postMessage(msg);
     });
   }
-  
+
   // Function to send a message to a specific popup.html view:
   function notifyPopups(msg) {
     Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name == 'popup') ports[portId_].port.postMessage(msg);
+      if(ports[portId_].name === 'popup') ports[portId_].port.postMessage(msg);
     });
   }
-  
+
   // Function to send a message to all panel.html views:
   function notifyPanel(msg) {
     Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name == 'panel') ports[portId_].port.postMessage(msg);
+      if(ports[portId_].name === 'panel') ports[portId_].port.postMessage(msg);
     });
   }
 
@@ -122,7 +113,7 @@
     var popupHTML = generatePopupHTML(tabId);
     notifyPopups({action: 'updateHTML', tabId: tabId, html: popupHTML});
   };
-  
+
   var generatePopupHTML = function(tabId) {
     if(resourcesRedirected[tabId]) {
       var newHTML = '';
@@ -132,7 +123,7 @@
       return newHTML;
     }
   };
-  
+
   var truncateURL = function(url) {
     var str = url;
     if(str.length > 40) str = url.substr(0, 20)+'...'+url.substr(url.length-20, url.length);
@@ -144,49 +135,48 @@
   var enableTab = function(tabId) {
     activeTabs[tabId] = true;
   };
-  
+
   var disableTab = function(tabId) {
     delete activeTabs[tabId];
   };
-  
+
   var validateUrl = function(id, url) {
     //Make an ajax call and make sure it returns a 200 status,
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
-      if(xhr.readyState == 4) {
-        notifyPanel({action: 'validatedUrl', id: id, url: url, status: xhr.status, content: xhr.status == 200 ? xhr.responseText : null});
+      if(xhr.readyState === 4) {
+        notifyPanel({action: 'validatedUrl', id: id, url: url, status: xhr.status, content: xhr.status === 200 ? xhr.responseText : null});
       }
     }; // Implemented elsewhere.
-    xhr.open("GET", url, true);
+    xhr.open('GET', url, true);
     xhr.send();
   };
-  
+
   //Reset the icon on loading,
   chrome.tabs.onUpdated.addListener(function(updateTabId, changeInfo, tab) {
     if(!activeTabs[updateTabId]) return;
-    
-    if(changeInfo.status == 'loading') {
+
+    if(changeInfo.status === 'loading') {
       var imgSrc = 'images/browser-icon-inactive.png';
       chrome.browserAction.setIcon({path: imgSrc, tabId: updateTabId});
       resetBadgeCount(updateTabId);
-      
+
       resourcesRedirected[updateTabId] = [];
       getPopupHTML(updateTabId);
-    } else if(changeInfo.status == 'complete') {
+    } else if(changeInfo.status === 'complete') {
       renderBadgeCount(updateTabId);
 
       //Update popup's content to list active redirects,
       getPopupHTML(updateTabId);
     }
   });
-  
-  
+
   //Get options on init,
   refreshOptions();
-  
+
   var isResourcePath = function(r) {
     var l = r[r.length];
-    return l === "*" ? true : false;
+    return l === '*' ? true : false;
   };
 
   var getFileName = function(u) {
@@ -197,15 +187,14 @@
 
   /*
     Build events for the domains,
-    
     Note:
     We're divising it by domains in case there's a lot of domains,
     to not loose speed because we need to check on every resources for every domains at the same time.
   */
   function generateResourceCatchers(rules) {
-    $.each(rules, function(i) {
+    $.each(rules, function() {
       var rule = this;
-      
+
       if(!rule.enabled) return; //Make sure the domain is enabled,
       chrome.webRequest.onBeforeRequest.addListener(listeners[listeners.length] = function(details) {
         //Make sure that the devtools for this tab is active,
@@ -218,19 +207,17 @@
           var fileName = getFileName(details.url);
           var regexPath = rule.resources[i].resourceURL.replace('*', '');
           regexPath = regexPath.replace(/\//g, '\\/');
-          var regex = new RegExp(regexPath+fileName+"$", "g");
+          var regex = new RegExp(regexPath + fileName + '$', 'g');
           var redirectUrl = null;
-          
+
           //If it's a path redirect if the file is in this path,
-          if(regex.test(details.url) == true)
-          {
+          if(regex.test(details.url)) {
             redirectUrl = rule.resources[i].resourceRedirectURL.replace('*', '') + fileName;
-          }
-          else if(details.url.indexOf(rule.resources[i].resourceURL) != -1) {
+          } else if(details.url.indexOf(rule.resources[i].resourceURL) !== -1) {
             redirectUrl = rule.resources[i].resourceRedirectURL;
             if(details.tabId) {
               badgeCounts[details.tabId] = badgeCounts[details.tabId] + 1;
-              if(typeof resourcesRedirected[details.tabId] == 'undefined') {
+              if(typeof resourcesRedirected[details.tabId] === 'undefined') {
                 resourcesRedirected[details.tabId] = [];
               }
               resourcesRedirected[details.tabId].push(rule.resources[i]);
@@ -254,7 +241,7 @@
             rule.domainURL+"*.less*"
           ]
       },
-      ["blocking"]
+      ['blocking']
       );
     });
   }
