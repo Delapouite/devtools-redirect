@@ -9,13 +9,13 @@
     },
 
     "browser_action": {
-      "default_popup": "popup.html",
+      "default_popup": "html/popup.html",
       "default_icon": "images/browser-icon-inactive.png"
     },
 
-    "background": {"page": "background.html"},
+    "background": {"page": "html/background.html"},
 
-    "devtools_page": "devtools.html",
+    "devtools_page": "html/devtools.html",
 
     "permissions": [
       "storage",

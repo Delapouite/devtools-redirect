@@ -1,5 +1,4 @@
 (function(DevtoolsRedirect) {
-
   /*
     Extension Communication,
   */

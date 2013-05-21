@@ -1,9 +1,10 @@
+/* global chrome */
 (function() {
   var currentTabId = null;
 
   var updateHTML = function(content) {
     content = content || '<li>No active redirects. <em>(Open the devtools and set redirects rules in the <strong>Redirect</strong> tab.)</em></li>';
-    $('#list-resources').html(content);
+    document.getElementById('list-resources').innerHTML = content;
   };
 
   var port = chrome.extension.connect({name: 'popup'});

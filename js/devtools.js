@@ -1,3 +1,4 @@
+/* global chrome, DevtoolsRedirect */
 (function() {
   var tabId = chrome.devtools.inspectedWindow.tabId;
   var opts = {};
@@ -19,19 +20,16 @@
 
   // Init the panel,
   chrome.devtools.panels.create('Redirect', 'icon_32.png', 'panel/panel.html', function(panel) {
-    var _window; // Going to hold the reference to panel.html's `window`
     var newResource = null;
     var currentTab = null;
 
     panel.onShown.addListener(function tmp(panelWindow) {
-      var _window = panelWindow;
-
       // Release queued data
       var msg;
-      while (msg = data.shift()) { _window.catchMessage(msg); }
+      while (msg = data.shift()) { panelWindow.catchMessage(msg); }
 
       // Just to show that it's easy to talk to pass a message back:
-      _window.respond = function(msg) {
+      panelWindow.respond = function(msg) {
         port.postMessage(msg);
       };
 
@@ -43,7 +41,7 @@
         console.info('panel is shown actions!');
         if(!newResource) return;
 
-        _window.Panel.addResourceFromTools(currentTab, newResource);
+        panelWindow.Panel.addResourceFromTools(currentTab, newResource);
         newResource = null;
       }, 250);
       */

@@ -1,3 +1,4 @@
+/* global chrome */
 (function() {
   var listeners = [];
   var resourcesRedirected = {};

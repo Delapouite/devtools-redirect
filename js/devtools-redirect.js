@@ -1,9 +1,8 @@
-(function(window) {
+/* global chrome, DevtoolsRedirect */
+(function() {
 
-  window.DevtoolsRedirect = {
-    //Constants,
+  DevtoolsRedirect = {
 
-    //Vars,
     options: {},
     storageItems: null,
     storageOptions: null,
@@ -48,4 +47,4 @@
     ]
   });
 
-})(window);
+})();
