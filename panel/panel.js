@@ -1,4 +1,5 @@
-(function(DevtoolsRedirect) {
+/* global chrome, can, DevtoolsRedirect */
+(function() {
   /*
     Extension Communication,
   */
@@ -43,15 +44,12 @@
     Panel constructor,
   */
   DevtoolsRedirect.Panel = can.Control({
-
     defaults: {
       rules: null
     },
-
     resourceKeyupTimeouts: null,
     validatingUrls: null
-  },
-  {
+  }, {
     //Functions,
     init: function() {
       var _this = this;
@@ -95,7 +93,6 @@
     },
 
     setResourcesStates: function() {
-      var _this = this;
       this.element.find('input.resourceURL, input.resourceRedirectURL').trigger('keyup');
     },
 
@@ -143,12 +140,12 @@
       }, 750);
     },
 
-    "input.domainURL, input.resourceURL, input.resourceRedirectURL blur": function(el, event) {
+    "input.domainURL, input.resourceURL, input.resourceRedirectURL blur": function() {
       // Save the rules every time a text field is blured(),
       this.saveRules();
     },
 
-    "input.siteEnabled change": function(el, event) {
+    "input.siteEnabled change": function() {
       // Save the rules every time a domain or a redirect enabling change,
       this.saveRules();
     },
@@ -159,8 +156,6 @@
     },
 
     saveRules: function() {
-      var _this = this;
-
       //Get rules,
       var rules = this.retrieveRules();
 
@@ -180,33 +175,29 @@
 
     setInputIcon: function(input, status, url, content) {
       var icon = input.parent().find('.icon');
-
+      if(!icon) return;
       //Destroy old popover and tooltips,
       icon.popover('destroy');
       icon.tooltip('destroy');
 
-      if(icon) {
-        if(status === 'ok') {
-          icon.attr('class', 'icon icon-ok-sign');
-          icon.parent().removeClass('error');
-          if(content) {
-            icon.popover({
-              placement: 'bottom',
-              title: 'File Preview',
-              content: '<div style="word-wrap: break-word; font-size:9pt; line-height:1.25em;">' + content + '</div>',
-              html: true
-            });
-          }
+      if(status === 'ok') {
+        icon.attr('class', 'icon icon-ok-sign');
+        icon.parent().removeClass('error');
+        if(content) {
+          icon.popover({
+            placement: 'bottom',
+            title: 'File Preview',
+            content: '<div style="word-wrap: break-word; font-size:9pt; line-height:1.25em;">' + content + '</div>',
+            html: true
+          });
         }
-        else if(status === 'error') {
-          icon.attr('class', 'icon icon-remove-sign');
-          icon.parent().addClass('error');
-          icon.tooltip({placement: 'bottom', title:'Error: can\'t load "' + url + '"'})
-        }
-        else if(status === 'loading') {
-          icon.attr('class', 'icon icon-question-sign');
-          icon.parent().removeClass('error');
-        }
+      } else if(status === 'error') {
+        icon.attr('class', 'icon icon-remove-sign');
+        icon.parent().addClass('error');
+        icon.tooltip({placement: 'bottom', title:'Error: can\'t load "' + url + '"'});
+      } else if(status === 'loading') {
+        icon.attr('class', 'icon icon-question-sign');
+        icon.parent().removeClass('error');
       }
     },
 
@@ -253,7 +244,6 @@
     },
 
     addResourceFromTools: function(tab, resource) {
-
       //Get domain,
       var domain = this.getDomain(tab.url, true);
 
@@ -339,9 +329,9 @@
 
   });
 
-  window.Panel = new DevtoolsRedirect.Panel('#form-rules', {});
+  Panel = new DevtoolsRedirect.Panel('#form-rules', {});
 
-})(DevtoolsRedirect);
+})();
 
 (function(window) {
   can.view.preload('views_rules_ejs', can.EJS(function(_CONTEXT,_VIEW) { with(_VIEW) { with (_CONTEXT) {var ___v1ew = [];___v1ew.push(can.view.txt(0,'',0,this,function(){var ___v1ew = []; $.each( rules, function( i, rule ) { ___v1ew.push("\n  <fieldset>\n    <legend>\n      <input class=\"siteEnabled\" type=\"checkbox\" placeholder=\"Enabled\" ");___v1ew.push(can.view.txt(0,'input',1,this,function(){var ___v1ew = []; if(rule.attr('enabled')) { ___v1ew.push(" checked=\"checked\""); } ;return ___v1ew.join('')}));

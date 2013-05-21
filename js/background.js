@@ -139,16 +139,13 @@
     if(!activeTabs[updateTabId]) return;
 
     if(changeInfo.status === 'loading') {
-      var imgSrc = 'images/browser-icon-inactive.png';
-      chrome.browserAction.setIcon({path: imgSrc, tabId: updateTabId});
+      setBrowserIcon(false, updateTabId);
       resetBadgeCount(updateTabId);
-
       resourcesRedirected[updateTabId] = [];
       getPopupHTML(updateTabId);
     } else if(changeInfo.status === 'complete') {
       renderBadgeCount(updateTabId);
-
-      //Update popup's content to list active redirects,
+      //Update popup's content to list active redirects
       getPopupHTML(updateTabId);
     }
   });
