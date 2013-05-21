@@ -1,4 +1,4 @@
-/* global chrome */
+/* global chrome, DevtoolsRedirect */
 (function() {
   var listeners = [];
   var resourcesRedirected = {};
@@ -17,14 +17,9 @@
     });
   };
 
-  var setBrowserIcon = function(state, tabId) {
-    var imgSrc = 'images/browser-icon-inactive.png';
-    if(state === 'active') {
-      imgSrc = 'images/browser-icon-active.png';
-    }
-
+  var setBrowserIcon = function(active, tabId) {
     chrome.browserAction.setIcon({
-      path: imgSrc,
+      path: 'images/browser-icon-' + (active ? 'active' : 'inactive') + '.png',
       tabId: tabId
     });
   };
@@ -43,10 +38,10 @@
 
   var renderBadgeCount = function(tabId) {
     if(badgeCounts[tabId] > 0) {
-      setBrowserIcon('active', tabId);
+      setBrowserIcon(true, tabId);
       chrome.browserAction.setBadgeText({text: badgeCounts[tabId].toString(), tabId: tabId});
     } else {
-      setBrowserIcon('inactive', tabId);
+      setBrowserIcon(false, tabId);
       chrome.browserAction.setBadgeText({text: '', tabId: tabId});
     }
   };
@@ -89,30 +84,16 @@
       });
   });
 
-  // Function to send a message to all devtool.html views:
-  function notifyDevtools(msg) {
+  // destination = devtools, popup or panel
+  function notify(destination, msg) {
     Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name === 'devtools') ports[portId_].port.postMessage(msg);
-    });
-  }
-
-  // Function to send a message to a specific popup.html view:
-  function notifyPopups(msg) {
-    Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name === 'popup') ports[portId_].port.postMessage(msg);
-    });
-  }
-
-  // Function to send a message to all panel.html views:
-  function notifyPanel(msg) {
-    Object.keys(ports).forEach(function(portId_) {
-      if(ports[portId_].name === 'panel') ports[portId_].port.postMessage(msg);
+      if(ports[portId_].name === destination) ports[portId_].port.postMessage(msg);
     });
   }
 
   var getPopupHTML = function(tabId) {
     var popupHTML = generatePopupHTML(tabId);
-    notifyPopups({action: 'updateHTML', tabId: tabId, html: popupHTML});
+    notify('popup', {action: 'updateHTML', tabId: tabId, html: popupHTML});
   };
 
   var generatePopupHTML = function(tabId) {
@@ -146,7 +127,7 @@
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
       if(xhr.readyState === 4) {
-        notifyPanel({action: 'validatedUrl', id: id, url: url, status: xhr.status, content: xhr.status === 200 ? xhr.responseText : null});
+        notify('panel', {action: 'validatedUrl', id: id, url: url, status: xhr.status, content: xhr.status === 200 ? xhr.responseText : null});
       }
     }; // Implemented elsewhere.
     xhr.open('GET', url, true);
@@ -154,7 +135,7 @@
   };
 
   //Reset the icon on loading,
-  chrome.tabs.onUpdated.addListener(function(updateTabId, changeInfo, tab) {
+  chrome.tabs.onUpdated.addListener(function(updateTabId, changeInfo) {
     if(!activeTabs[updateTabId]) return;
 
     if(changeInfo.status === 'loading') {
@@ -199,7 +180,7 @@
       chrome.webRequest.onBeforeRequest.addListener(listeners[listeners.length] = function(details) {
         //Make sure that the devtools for this tab is active,
         if(!activeTabs[details.tabId]) return;
-        for(var i=0;i<rule.resources.length;i++) {
+        for(var i=0; i<rule.resources.length; i++) {
           //Make sure the rule is enabled,
           if(!rule.resources[i].enabled) return;
 
